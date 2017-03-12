@@ -20,6 +20,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -46,7 +47,8 @@ import com.google.android.gms.wearable.Wearable;
 
 public class MainActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
-        ForecastAdapter.ForecastAdapterOnClickHandler, GoogleApiClient.OnConnectionFailedListener {
+        ForecastAdapter.ForecastAdapterOnClickHandler, GoogleApiClient.OnConnectionFailedListener,
+        GoogleApiClient.ConnectionCallbacks{
 
     private final String TAG = MainActivity.class.getSimpleName();
 
@@ -391,5 +393,15 @@ public class MainActivity extends AppCompatActivity implements
         } else {
             Toast.makeText(this, R.string.no_device_found, Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
     }
 }
