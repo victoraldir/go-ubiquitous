@@ -19,6 +19,7 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -31,14 +32,21 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import com.example.android.sunshine.data.SunshinePreferences;
 import com.example.android.sunshine.data.WeatherContract;
 import com.example.android.sunshine.sync.SunshineSyncUtils;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.Wearable;
 
 public class MainActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
-        ForecastAdapter.ForecastAdapterOnClickHandler {
+        ForecastAdapter.ForecastAdapterOnClickHandler, GoogleApiClient.OnConnectionFailedListener {
 
     private final String TAG = MainActivity.class.getSimpleName();
 
@@ -79,11 +87,21 @@ public class MainActivity extends AppCompatActivity implements
 
     private ProgressBar mLoadingIndicator;
 
+    private GoogleApiClient mGoogleApiClient;
+    /* the preferred note that can handle the confirmation capability */
+    private Node mConfirmationHandlerNode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_forecast);
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Wearable.API)
+                .addOnConnectionFailedListener(this)
+                .addConnectionCallbacks(this)
+                .build();
+
         getSupportActionBar().setElevation(0f);
 
         /*
@@ -342,5 +360,36 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+        Log.e(TAG, "Failed to connect to Google Api Client");
+        mConfirmationHandlerNode = null;
+    }
+
+    private ResultCallback<MessageApi.SendMessageResult> getSendMessageResultCallback(
+            final Node node) {
+        return new ResultCallback<MessageApi.SendMessageResult>() {
+            @Override
+            public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                if (!sendMessageResult.getStatus().isSuccess()) {
+                    Log.e(TAG, "Failed to send message with status "
+                            + sendMessageResult.getStatus());
+                } else {
+                    Log.d(TAG, "Sent confirmation message to node " + node.getDisplayName());
+                }
+            }
+        };
+    }
+
+    private void sendMessageToCompanion(final String path) {
+        if (mConfirmationHandlerNode != null) {
+            Wearable.MessageApi.sendMessage(mGoogleApiClient, mConfirmationHandlerNode.getId(),
+                    path, new byte[0])
+                    .setResultCallback(getSendMessageResultCallback(mConfirmationHandlerNode));
+        } else {
+            Toast.makeText(this, R.string.no_device_found, Toast.LENGTH_SHORT).show();
+        }
     }
 }

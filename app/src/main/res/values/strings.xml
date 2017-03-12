@@ -234,6 +234,7 @@
     <string name="a11y_wind">Wind speed and direction: <xliff:g id="wind">%1$s</xliff:g></string>
 
 
+    <string name="no_device_found">Device not found</string>
 
     <!-- Used by NotificationUtils -->
 

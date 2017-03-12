@@ -21,6 +21,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -111,6 +113,10 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
         Paint mAmPmPaint;
         Paint mColonPaint;
         Paint mDivisor;
+        Paint mWeatherGraphicPaint;
+        Paint mMin;
+        Paint mMax;
+        private Bitmap mWeatherGraphic;
         float mColonWidth;
         boolean mAmbient;
         boolean mMute;
@@ -124,7 +130,6 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
         };
         float mXOffset;
         float mYOffset;
-        boolean mShouldDrawColons;
         String mAmString;
         String mPmString;
         float mLineHeight;
@@ -132,7 +137,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
 
         Date mDate;
         SimpleDateFormat mDayOfWeekFormat;
-        java.text.DateFormat mDateFormat;
+//        java.text.DateFormat mDateFormat;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -184,10 +189,19 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             mColonPaint = createTextPaint(
                     ContextCompat.getColor(getApplicationContext(), R.color.digital_date));
 
+            mDivisor.setColor(ContextCompat.getColor(getApplicationContext(), R.color.digital_date));
+
+            mMin = createTextPaint(
+                    ContextCompat.getColor(getApplicationContext(), R.color.digital_text));
+            mMax = createTextPaint(
+                    ContextCompat.getColor(getApplicationContext(), R.color.digital_date));
+
             mCalendar = Calendar.getInstance();
 
             mDate = new Date();
 
+            mWeatherGraphic = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_rain);
+            mWeatherGraphicPaint = new Paint();
             initFormats();
         }
 
@@ -204,10 +218,10 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
         }
 
         private void initFormats() {
-            mDayOfWeekFormat = new SimpleDateFormat("EEEE", Locale.getDefault());
+            mDayOfWeekFormat = new SimpleDateFormat("EEE, MMM d YYY", Locale.getDefault());
             mDayOfWeekFormat.setCalendar(mCalendar);
-            mDateFormat = DateFormat.getDateFormat(MainWatchFaceService.this);
-            mDateFormat.setCalendar(mCalendar);
+            //mDateFormat = DateFormat.getDateFormat(MainWatchFaceService.this);
+            //mDateFormat.setCalendar(mCalendar);
         }
 
         @Override
@@ -274,6 +288,11 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             float textSize = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
 
+            float maxTextSize = resources.getDimension(isRound
+                    ? R.dimen.digital_max_round : R.dimen.digital_max);
+
+            float minTextSize = resources.getDimension(isRound
+                    ? R.dimen.digital_min_round : R.dimen.digital_min);
 
             //mTextPaint.setTextSize(textSize);
             mDatePaint.setTextSize(resources.getDimension(R.dimen.digital_date_text_size));
@@ -281,6 +300,8 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             mMinutePaint.setTextSize(textSize);
             mSecondPaint.setTextSize(textSize);
             mColonPaint.setTextSize(textSize);
+            mMax.setTextSize(maxTextSize);
+            mMin.setTextSize(maxTextSize);
             mColonWidth = mColonPaint.measureText(COLON_STRING);
         }
 
@@ -291,6 +312,8 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             boolean burnInProtection = properties.getBoolean(PROPERTY_BURN_IN_PROTECTION,false);
             //mTextPaint.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
             mHourPaint.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
+            mMax.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
+            //mMin.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
 
             //Tells us if the display can only render simple colors when in low power mode
             mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
@@ -354,12 +377,18 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             invalidate();
         }
 
+        boolean lastStatus = true;
+        private boolean shouldDrawColons(){
+            lastStatus = !lastStatus ? true : false;
+            return lastStatus;
+        }
+
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
 
             boolean is24Hour = DateFormat.is24HourFormat(MainWatchFaceService.this);
 
-            mShouldDrawColons = (System.currentTimeMillis() % 1000) < 500;
+            boolean mShouldDrawColons = shouldDrawColons();
 
             // Draw the background.
             if (isInAmbientMode()) {
@@ -376,6 +405,8 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
                     mCalendar.get(Calendar.MINUTE))
                     : String.format("%d:%02d:%02d", mCalendar.get(Calendar.HOUR),
                     mCalendar.get(Calendar.MINUTE), mCalendar.get(Calendar.SECOND));
+
+
 
             // Draw the hours.
             float x = mXOffset;
@@ -397,6 +428,13 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             if (isInAmbientMode() || mMute || mShouldDrawColons) {
                 canvas.drawText(COLON_STRING, x, mYOffset, mColonPaint);
             }
+
+//            if(counter % 2 == 0 && counter <= total){
+//                canvas.drawText("?", x, mYOffset, mColonPaint);
+//            }
+
+//            counter++;
+
             x += mColonWidth;
 
             // Draw the minutes.
@@ -409,6 +447,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
                 if (mShouldDrawColons) {
                     canvas.drawText(COLON_STRING, x, mYOffset, mColonPaint);
                 }
+
                 x += mColonWidth;
                 canvas.drawText(formatTwoDigitNumber(
                         mCalendar.get(Calendar.SECOND)), x, mYOffset, mSecondPaint);
@@ -418,23 +457,36 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
                         mCalendar.get(Calendar.AM_PM)), x, mYOffset, mAmPmPaint);
             }
 
-//            canvas.drawLine(0,0,1,1,mDivisor);
-//            canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
-
-//            canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
-
             // Only render the day of week and date if there is no peek card, so they do not bleed
             // into each other in ambient mode.
             if (getPeekCardPosition().isEmpty()) {
 
-                // Day of week
+                String dayOfWeekDate = mDayOfWeekFormat.format(mDate);
+
+                // Day of week and date
                 canvas.drawText(
-                        mDayOfWeekFormat.format(mDate),
+                        dayOfWeekDate,
                         mXOffset, mYOffset + mLineHeight, mDatePaint);
-                // Date
-                canvas.drawText(
-                        mDateFormat.format(mDate),
-                        mXOffset, mYOffset + mLineHeight * 2, mDatePaint);
+
+                int lineSize = 40;
+                float xBegin = (bounds.width() / 2f) - lineSize;
+                float xEnd = (bounds.width() / 2f) + lineSize;
+                canvas.drawLine(xBegin, mYOffset + mLineHeight * 2, xEnd, mYOffset + mLineHeight * 2, mDivisor);
+
+                float yGraphic = mYOffset + mLineHeight * 2;
+
+                if (!isInAmbientMode()) {
+                    canvas.drawBitmap(mWeatherGraphic, mXOffset, yGraphic, mWeatherGraphicPaint);
+                }
+
+                yGraphic = mYOffset + mLineHeight * 3;
+
+                float xMax = (bounds.width() / 2f) - (mMax.measureText("19°") / 2f);
+                canvas.drawText("19°", xMax, yGraphic, mMax);
+
+                float xMin = xMax + mColonWidth * 5;
+                canvas.drawText("6°", xMin, yGraphic, mMin);
+
             }
         }
 
