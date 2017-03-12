@@ -110,6 +110,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
         Paint mSecondPaint;
         Paint mAmPmPaint;
         Paint mColonPaint;
+        Paint mDivisor;
         float mColonWidth;
         boolean mAmbient;
         boolean mMute;
@@ -171,6 +172,8 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
 
             mSecondPaint = new Paint();
             mSecondPaint = createTextPaint(resources.getColor(R.color.digital_date));
+
+            mDivisor = new Paint();
 
             mAmPmPaint = createTextPaint(
                     ContextCompat.getColor(getApplicationContext(), R.color.digital_date));
@@ -414,6 +417,9 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
                 canvas.drawText(getAmPmString(
                         mCalendar.get(Calendar.AM_PM)), x, mYOffset, mAmPmPaint);
             }
+
+//            canvas.drawLine(0,0,1,1,mDivisor);
+//            canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
 
 //            canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
 
