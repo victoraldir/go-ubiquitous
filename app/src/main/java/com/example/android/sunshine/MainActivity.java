@@ -443,25 +443,25 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
                 if(dataItemResult.getStatus().isSuccess()){
-
+                    Log.d(TAG,"Message has been delivered to the API successfully");
                 }else{
-
+                    Log.d(TAG,"Problem delivering message to the API. Is it connected?");
                 }
             }
         });
     }
 
-    private ResultCallback<MessageApi.SendMessageResult> getSendMessageResultCallback() {
-        return new ResultCallback<MessageApi.SendMessageResult>() {
-            @Override
-            public void onResult(MessageApi.SendMessageResult sendMessageResult) {
-                if (!sendMessageResult.getStatus().isSuccess()) {
-                    Log.e(TAG, "Failed to connect to Google Api Client with status "
-                            + sendMessageResult.getStatus());
-                }
-            }
-        };
-    }
+//    private ResultCallback<MessageApi.SendMessageResult> getSendMessageResultCallback() {
+//        return new ResultCallback<MessageApi.SendMessageResult>() {
+//            @Override
+//            public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+//                if (!sendMessageResult.getStatus().isSuccess()) {
+//                    Log.e(TAG, "Failed to connect to Google Api Client with status "
+//                            + sendMessageResult.getStatus());
+//                }
+//            }
+//        };
+//    }
 
     /**
      * Sends a message to Wearable MainActivity when button is pressed.
