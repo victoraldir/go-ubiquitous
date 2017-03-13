@@ -31,6 +31,8 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceService;
@@ -40,6 +42,16 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 import android.widget.Toast;
+
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.Wearable;
 
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
@@ -100,12 +112,13 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
 
     private class Engine extends CanvasWatchFaceService.Engine {
 
+        private final Context mCntext = MainWatchFaceService.this.getApplicationContext();
+
         static final String COLON_STRING = ":";
 
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
-        //Paint mTextPaint;
         Paint mDatePaint;
         Paint mHourPaint;
         Paint mMinutePaint;
@@ -137,7 +150,6 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
 
         Date mDate;
         SimpleDateFormat mDayOfWeekFormat;
-//        java.text.DateFormat mDateFormat;
 
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
@@ -145,9 +157,16 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
          */
         boolean mLowBitAmbient;
 
+        private GoogleApiClient mGoogleApiClient;
+
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
+
+            mGoogleApiClient = new GoogleApiClient.Builder(mCntext)
+                    .addApi(Wearable.API)
+                    .build();
+            mGoogleApiClient.connect();
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MainWatchFaceService.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
@@ -160,15 +179,11 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             mAmString = resources.getString(R.string.digital_am);
             mPmString = resources.getString(R.string.digital_pm);
 
-            mYOffset = resources.getDimension(R.dimen.digital_y_offset);
-
             mLineHeight = resources.getDimension(R.dimen.digital_line_height);
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.colorPrimary));
 
-//            mTextPaint = new Paint();
-//            mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
             mHourPaint = new Paint();
             mHourPaint = createTextPaint(resources.getColor(R.color.digital_text));
 
@@ -220,8 +235,6 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
         private void initFormats() {
             mDayOfWeekFormat = new SimpleDateFormat("EEE, MMM d YYY", Locale.getDefault());
             mDayOfWeekFormat.setCalendar(mCalendar);
-            //mDateFormat = DateFormat.getDateFormat(MainWatchFaceService.this);
-            //mDateFormat.setCalendar(mCalendar);
         }
 
         @Override
@@ -303,6 +316,9 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             mMax.setTextSize(maxTextSize);
             mMin.setTextSize(maxTextSize);
             mColonWidth = mColonPaint.measureText(COLON_STRING);
+
+            mYOffset = resources.getDimension(isRound
+                    ? R.dimen.digital_y_offset_round : R.dimen.digital_y_offset);
         }
 
         @Override
@@ -310,10 +326,8 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             super.onPropertiesChanged(properties);
             mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
             boolean burnInProtection = properties.getBoolean(PROPERTY_BURN_IN_PROTECTION,false);
-            //mTextPaint.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
             mHourPaint.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
             mMax.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
-            //mMin.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
 
             //Tells us if the display can only render simple colors when in low power mode
             mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
@@ -336,7 +350,6 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
                 if (mLowBitAmbient) {
-                    //mTextPaint.setAntiAlias(!inAmbientMode);
                     boolean antiAlias = !inAmbientMode;
 
                     mDatePaint.setAntiAlias(antiAlias);
@@ -400,14 +413,6 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
             mCalendar.setTimeInMillis(System.currentTimeMillis());
 
-            String text = mAmbient
-                    ? String.format("%d:%02d", mCalendar.get(Calendar.HOUR),
-                    mCalendar.get(Calendar.MINUTE))
-                    : String.format("%d:%02d:%02d", mCalendar.get(Calendar.HOUR),
-                    mCalendar.get(Calendar.MINUTE), mCalendar.get(Calendar.SECOND));
-
-
-
             // Draw the hours.
             float x = mXOffset;
             String hourString;
@@ -428,12 +433,6 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             if (isInAmbientMode() || mMute || mShouldDrawColons) {
                 canvas.drawText(COLON_STRING, x, mYOffset, mColonPaint);
             }
-
-//            if(counter % 2 == 0 && counter <= total){
-//                canvas.drawText("?", x, mYOffset, mColonPaint);
-//            }
-
-//            counter++;
 
             x += mColonWidth;
 
@@ -529,5 +528,6 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
             }
         }
+
     }
 }

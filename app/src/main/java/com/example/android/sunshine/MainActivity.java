@@ -41,16 +41,25 @@ import com.example.android.sunshine.sync.SunshineSyncUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.MessageApi;
+import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
 
 public class MainActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
         ForecastAdapter.ForecastAdapterOnClickHandler, GoogleApiClient.OnConnectionFailedListener,
-        GoogleApiClient.ConnectionCallbacks{
+        GoogleApiClient.ConnectionCallbacks,
+        MessageApi.MessageListener{
 
     private final String TAG = MainActivity.class.getSimpleName();
+    private final String MY_DATA_PATH = "/my-data";
+    private final String CONENTENT_KEY = "myKey";
 
     /*
      * The columns of data that we are interested in displaying within our MainActivity's list of
@@ -259,7 +268,10 @@ public class MainActivity extends AppCompatActivity implements
         mForecastAdapter.swapCursor(data);
         if (mPosition == RecyclerView.NO_POSITION) mPosition = 0;
         mRecyclerView.smoothScrollToPosition(mPosition);
-        if (data.getCount() != 0) showWeatherDataView();
+        if (data.getCount() != 0){
+            showWeatherDataView();
+            sendWeatherWearable("Bla");
+        }
     }
 
     /**
@@ -361,6 +373,12 @@ public class MainActivity extends AppCompatActivity implements
             return true;
         }
 
+        if(id == R.id.action_send_data){
+            sendWeatherWearable("ShouldBeSentToWatch");
+//            onStartWearableActivityClick();
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -385,23 +403,100 @@ public class MainActivity extends AppCompatActivity implements
         };
     }
 
-    private void sendMessageToCompanion(final String path) {
-        if (mConfirmationHandlerNode != null) {
-            Wearable.MessageApi.sendMessage(mGoogleApiClient, mConfirmationHandlerNode.getId(),
-                    path, new byte[0])
-                    .setResultCallback(getSendMessageResultCallback(mConfirmationHandlerNode));
-        } else {
-            Toast.makeText(this, R.string.no_device_found, Toast.LENGTH_SHORT).show();
-        }
-    }
+
 
     @Override
-    public void onConnected(@Nullable Bundle bundle) {
-
+    public void onConnected(Bundle bundle) {
+        Wearable.MessageApi.addListener(mGoogleApiClient, this);
     }
 
     @Override
     public void onConnectionSuspended(int i) {
+        Wearable.MessageApi.removeListener(mGoogleApiClient, this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.connect();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mGoogleApiClient.isConnected()) {
+            mGoogleApiClient.disconnect();
+        }
+        super.onDestroy();
+    }
+
+    public void sendWeatherWearable(String weatherJson) {
+
+        PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(MY_DATA_PATH);
+
+        putDataMapRequest.getDataMap().putString(CONENTENT_KEY,weatherJson);
+
+        PutDataRequest request = putDataMapRequest.asPutDataRequest();
+
+        Wearable.DataApi.putDataItem(mGoogleApiClient,request).setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+            @Override
+            public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
+                if(dataItemResult.getStatus().isSuccess()){
+
+                }else{
+
+                }
+            }
+        });
+    }
+
+    private ResultCallback<MessageApi.SendMessageResult> getSendMessageResultCallback() {
+        return new ResultCallback<MessageApi.SendMessageResult>() {
+            @Override
+            public void onResult(MessageApi.SendMessageResult sendMessageResult) {
+                if (!sendMessageResult.getStatus().isSuccess()) {
+                    Log.e(TAG, "Failed to connect to Google Api Client with status "
+                            + sendMessageResult.getStatus());
+                }
+            }
+        };
+    }
+
+    /**
+     * Sends a message to Wearable MainActivity when button is pressed.
+     */
+//    public void onStartWearableActivityClick() {
+//        Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(
+//                new ResultCallback<NodeApi.GetConnectedNodesResult>() {
+//                    @Override
+//                    public void onResult(NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
+//                        for (final Node node : getConnectedNodesResult.getNodes()) {
+//                            Wearable.MessageApi.sendMessage(mGoogleApiClient, node.getId(),
+//                                    MY_DATA_PATH, new byte[0]).setResultCallback(
+//                                    getSendMessageResultCallback());
+//                        }
+//                    }
+//                });
+//    }
+
+    @Override
+    public void onMessageReceived(final MessageEvent messageEvent) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+//                if (messageEvent.getPath().equals(TIMER_SELECTED_PATH)) {
+//                    Toast.makeText(getApplicationContext(), R.string.toast_timer_selected,
+//                            Toast.LENGTH_SHORT).show();
+//                } else if (messageEvent.getPath().equals(TIMER_FINISHED_PATH)) {
+//                    Toast.makeText(getApplicationContext(), R.string.toast_timer_finished,
+//                            Toast.LENGTH_SHORT).show();
+//                }
+
+                Toast.makeText(getApplicationContext(), "Thread running",
+                            Toast.LENGTH_SHORT).show();
+            }
+        });
 
     }
 }
