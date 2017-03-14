@@ -157,16 +157,16 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
          */
         boolean mLowBitAmbient;
 
-        private GoogleApiClient mGoogleApiClient;
+//        private GoogleApiClient mGoogleApiClient;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-            mGoogleApiClient = new GoogleApiClient.Builder(mCntext)
-                    .addApi(Wearable.API)
-                    .build();
-            mGoogleApiClient.connect();
+//            mGoogleApiClient = new GoogleApiClient.Builder(mCntext)
+//                    .addApi(Wearable.API)
+//                    .build();
+//            mGoogleApiClient.connect();
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MainWatchFaceService.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)

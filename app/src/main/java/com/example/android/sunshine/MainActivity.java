@@ -375,7 +375,6 @@ public class MainActivity extends AppCompatActivity implements
 
         if(id == R.id.action_send_data){
             sendWeatherWearable("ShouldBeSentToWatch");
-//            onStartWearableActivityClick();
             return true;
         }
 
