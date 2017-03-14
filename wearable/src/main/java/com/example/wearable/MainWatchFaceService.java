@@ -233,7 +233,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
         }
 
         private void initFormats() {
-            mDayOfWeekFormat = new SimpleDateFormat("EEE, MMM d YYY", Locale.getDefault());
+            mDayOfWeekFormat = new SimpleDateFormat("EEE, MMM d yyyy", Locale.getDefault());
             mDayOfWeekFormat.setCalendar(mCalendar);
         }
 
