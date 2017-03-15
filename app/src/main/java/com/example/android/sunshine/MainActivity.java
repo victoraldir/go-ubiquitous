@@ -20,7 +20,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -42,14 +41,15 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.wearable.DataApi;
-import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.MessageApi;
 import com.google.android.gms.wearable.MessageEvent;
 import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
 import com.google.android.gms.wearable.Wearable;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements
 
     private final String TAG = MainActivity.class.getSimpleName();
     private final String MY_DATA_PATH = "/my-data";
-    private final String CONENTENT_KEY = "myKey";
+    private final String CONTENT_KEY = "myKey";
 
     /*
      * The columns of data that we are interested in displaying within our MainActivity's list of
@@ -270,7 +270,19 @@ public class MainActivity extends AppCompatActivity implements
         mRecyclerView.smoothScrollToPosition(mPosition);
         if (data.getCount() != 0){
             showWeatherDataView();
-            sendWeatherWearable("Bla");
+            JSONObject obj = new JSONObject();
+            data.moveToFirst();
+            try {
+
+                obj.put(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,data.getInt(INDEX_WEATHER_MAX_TEMP));
+                obj.put(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,data.getInt(INDEX_WEATHER_MIN_TEMP));
+
+                sendWeatherWearable(obj.toString());
+
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
         }
     }
 
@@ -374,7 +386,7 @@ public class MainActivity extends AppCompatActivity implements
         }
 
         if(id == R.id.action_send_data){
-            sendWeatherWearable("ShouldBeSentToWatch");
+            getSupportLoaderManager().initLoader(ID_FORECAST_LOADER, null, this);
             return true;
         }
 
@@ -434,7 +446,7 @@ public class MainActivity extends AppCompatActivity implements
 
         PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(MY_DATA_PATH);
 
-        putDataMapRequest.getDataMap().putString(CONENTENT_KEY,weatherJson);
+        putDataMapRequest.getDataMap().putString(CONTENT_KEY,weatherJson);
 
         PutDataRequest request = putDataMapRequest.asPutDataRequest();
 

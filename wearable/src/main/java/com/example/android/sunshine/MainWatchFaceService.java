@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.wearable;
+package com.example.android.sunshine;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -31,9 +31,8 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
@@ -44,14 +43,8 @@ import android.view.WindowInsets;
 import android.widget.Toast;
 
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.wearable.DataApi;
-import com.google.android.gms.wearable.DataEvent;
-import com.google.android.gms.wearable.DataEventBuffer;
-import com.google.android.gms.wearable.DataMap;
-import com.google.android.gms.wearable.DataMapItem;
-import com.google.android.gms.wearable.Wearable;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
@@ -74,6 +67,8 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
     private static final Typeface BOLD_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD);
 
+
+
     /**
      * Update rate in milliseconds for interactive mode. We update once a second since seconds are
      * displayed in interactive mode.
@@ -84,6 +79,31 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
      * Handler message id for updating the time periodically in interactive mode.
      */
     private static final int MSG_UPDATE_TIME = 0;
+
+
+    private Handler mHandler;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        mHandler = new Handler();
+
+    }
+
+    public void sendToast(final String content){
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(),"onDataChanged " + content,Toast.LENGTH_LONG).show();
+            }
+        });
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+    }
 
     @Override
     public Engine onCreateEngine() {
@@ -112,8 +132,6 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
 
     private class Engine extends CanvasWatchFaceService.Engine {
 
-        private final Context mCntext = MainWatchFaceService.this.getApplicationContext();
-
         static final String COLON_STRING = ":";
 
         final Handler mUpdateTimeHandler = new EngineHandler(this);
@@ -129,6 +147,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
         Paint mWeatherGraphicPaint;
         Paint mMin;
         Paint mMax;
+        Paint mNoWeather;
         private Bitmap mWeatherGraphic;
         float mColonWidth;
         boolean mAmbient;
@@ -145,6 +164,8 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
         float mYOffset;
         String mAmString;
         String mPmString;
+        String mNoData;
+        JSONObject mWeatherObj;
         float mLineHeight;
 
 
@@ -157,16 +178,15 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
          */
         boolean mLowBitAmbient;
 
+        private DataReceiver mDataReceiver;
+
 //        private GoogleApiClient mGoogleApiClient;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-//            mGoogleApiClient = new GoogleApiClient.Builder(mCntext)
-//                    .addApi(Wearable.API)
-//                    .build();
-//            mGoogleApiClient.connect();
+            sendToast("Engine.onCreate fired");
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MainWatchFaceService.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
@@ -206,18 +226,66 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
 
             mDivisor.setColor(ContextCompat.getColor(getApplicationContext(), R.color.digital_date));
 
+            mNoWeather = createTextPaint(
+                    ContextCompat.getColor(getApplicationContext(), R.color.digital_date));
+
             mMin = createTextPaint(
                     ContextCompat.getColor(getApplicationContext(), R.color.digital_text));
             mMax = createTextPaint(
                     ContextCompat.getColor(getApplicationContext(), R.color.digital_date));
 
+            mNoData = resources.getString(R.string.no_data);
+            mWeatherObj = null;
             mCalendar = Calendar.getInstance();
 
             mDate = new Date();
 
             mWeatherGraphic = BitmapFactory.decodeResource(getResources(), R.mipmap.ic_rain);
             mWeatherGraphicPaint = new Paint();
+
             initFormats();
+
+
+            mDataReceiver = new DataReceiver();
+
+            sendToast("MainWatchFaceService.onCreate fired");
+
+            IntentFilter filter = new IntentFilter();
+            filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
+            filter.addAction(DataListenerService.ACTION_NEW_DATA); // Data receiver
+            LocalBroadcastManager.getInstance(getApplicationContext()).registerReceiver(mDataReceiver, filter);
+        }
+
+        /**
+         * Here we can get any response back from our Service and handle the situation properly
+         */
+        private class DataReceiver extends BroadcastReceiver {
+
+            private DataReceiver() {
+            }
+
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                String content = intent.getStringExtra(DataListenerService.EXTRA_RESULT);
+
+                if (content != null) {
+
+                    sendToast(content);
+
+                    try {
+
+                        mWeatherObj = new JSONObject(content);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+            }
+
+
         }
 
         @Override
@@ -313,6 +381,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             mMinutePaint.setTextSize(textSize);
             mSecondPaint.setTextSize(textSize);
             mColonPaint.setTextSize(textSize);
+            mNoWeather.setTextSize(minTextSize);
             mMax.setTextSize(maxTextSize);
             mMin.setTextSize(maxTextSize);
             mColonWidth = mColonPaint.measureText(COLON_STRING);
@@ -441,7 +510,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
             canvas.drawText(minuteString, x, mYOffset, mMinutePaint);
             x += mMinutePaint.measureText(minuteString);
 
-            //TODO seconds
+
             if (!isInAmbientMode() && !mMute) {
                 if (mShouldDrawColons) {
                     canvas.drawText(COLON_STRING, x, mYOffset, mColonPaint);
@@ -456,36 +525,49 @@ public class MainWatchFaceService extends CanvasWatchFaceService {
                         mCalendar.get(Calendar.AM_PM)), x, mYOffset, mAmPmPaint);
             }
 
+            String dayOfWeekDate = mDayOfWeekFormat.format(mDate);
+
+            // Day of week and date
+            canvas.drawText(
+                    dayOfWeekDate,
+                    mXOffset, mYOffset + mLineHeight, mDatePaint);
+
             // Only render the day of week and date if there is no peek card, so they do not bleed
             // into each other in ambient mode.
             if (getPeekCardPosition().isEmpty()) {
-
-                String dayOfWeekDate = mDayOfWeekFormat.format(mDate);
-
-                // Day of week and date
-                canvas.drawText(
-                        dayOfWeekDate,
-                        mXOffset, mYOffset + mLineHeight, mDatePaint);
 
                 int lineSize = 40;
                 float xBegin = (bounds.width() / 2f) - lineSize;
                 float xEnd = (bounds.width() / 2f) + lineSize;
                 canvas.drawLine(xBegin, mYOffset + mLineHeight * 2, xEnd, mYOffset + mLineHeight * 2, mDivisor);
 
-                float yGraphic = mYOffset + mLineHeight * 2;
+                if(mWeatherObj != null) {
 
-                if (!isInAmbientMode()) {
-                    canvas.drawBitmap(mWeatherGraphic, mXOffset, yGraphic, mWeatherGraphicPaint);
+                    float yGraphic = mYOffset + mLineHeight * 2;
+
+                    if (!isInAmbientMode()) {
+                        canvas.drawBitmap(mWeatherGraphic, mXOffset, yGraphic, mWeatherGraphicPaint);
+                    }
+
+                    yGraphic = mYOffset + mLineHeight * 3;
+
+                    try {
+
+                        float xMax = (bounds.width() / 2f) - (mMax.measureText(mWeatherObj.getString("max")) / 2f);
+                        canvas.drawText(mWeatherObj.getString("max"), xMax, yGraphic, mMax);
+
+                        float xMin = xMax + mColonWidth * 5;
+                        canvas.drawText(mWeatherObj.getString("min"), xMin, yGraphic, mMin);
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                }else{
+
+                    canvas.drawText(mNoData, (bounds.width() / 2f) - mNoWeather.measureText(mNoData) /2f, mYOffset + mLineHeight * 3, mNoWeather);
+
                 }
-
-                yGraphic = mYOffset + mLineHeight * 3;
-
-                float xMax = (bounds.width() / 2f) - (mMax.measureText("19°") / 2f);
-                canvas.drawText("19°", xMax, yGraphic, mMax);
-
-                float xMin = xMax + mColonWidth * 5;
-                canvas.drawText("6°", xMin, yGraphic, mMin);
-
             }
         }
 
