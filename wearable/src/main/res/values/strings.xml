@@ -5,6 +5,4 @@
 
     <string name="digital_am">AM</string>
     <string name="digital_pm">PM</string>
-
-    <string name="no_data">No weather available</string>
 </resources>

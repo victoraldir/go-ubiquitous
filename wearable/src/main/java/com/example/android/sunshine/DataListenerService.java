@@ -8,10 +8,9 @@ import android.widget.Toast;
 
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.WearableListenerService;
-
-import org.json.JSONObject;
 
 public class DataListenerService extends WearableListenerService {
 
@@ -21,28 +20,27 @@ public class DataListenerService extends WearableListenerService {
 
     public static final String EXTRA_RESULT = TAG + ".RESULT";
     public static final String ACTION_NEW_DATA = TAG + ".ACTION_NEW_DATA";
-    private final String CONTENT_KEY = "myKey";
+    private final String CONTENT_KEY = "myWeather";
 
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "onCreate called");
         mHandler = new Handler();
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(),"onCreate called",Toast.LENGTH_LONG).show();
-            }
-        });
+        sendToast("DataListenerService.onCreate");
+        Log.d(TAG, "DataListenerService.onCreate called");
     }
 
     @Override
     public void onDataChanged(DataEventBuffer dataEventBuffer) {
+
+        Toast.makeText(getApplicationContext(),"DataListenerService.onDataChanged",Toast.LENGTH_LONG).show();
         for (final DataEvent event : dataEventBuffer) {
             if (event.getType() == DataEvent.TYPE_CHANGED) {
 
-                DataMapItem dataMapItem = DataMapItem.fromDataItem(event.getDataItem());
-                final String content = dataMapItem.getDataMap().getString(CONTENT_KEY);
+                DataMap dataMap = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
+                final String content = dataMap.getString(CONTENT_KEY);
+
+                sendToast("content: " + content);
 
                 Intent localIntent = new Intent(ACTION_NEW_DATA);
                 localIntent.putExtra(EXTRA_RESULT, content);
@@ -55,5 +53,13 @@ public class DataListenerService extends WearableListenerService {
 
     }
 
+    private void sendToast(final String msg){
+        mHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();
+            }
+        });
+    }
 
 }
