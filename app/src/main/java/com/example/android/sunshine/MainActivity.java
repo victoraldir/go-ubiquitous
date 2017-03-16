@@ -38,6 +38,7 @@ import android.widget.Toast;
 import com.example.android.sunshine.data.SunshinePreferences;
 import com.example.android.sunshine.data.WeatherContract;
 import com.example.android.sunshine.sync.SunshineSyncUtils;
+import com.example.android.sunshine.utilities.SunshineWeatherUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -56,13 +57,14 @@ import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
-        ForecastAdapter.ForecastAdapterOnClickHandler, GoogleApiClient.OnConnectionFailedListener,
+        ForecastAdapter.ForecastAdapterOnClickHandler,
+        GoogleApiClient.OnConnectionFailedListener,
         GoogleApiClient.ConnectionCallbacks,
         MessageApi.MessageListener{
 
     private final String TAG = MainActivity.class.getSimpleName();
-    private final String MY_DATA_PATH = "/my-data";
-    private final String CONTENT_KEY = "myWeather";
+    public static final String MY_DATA_PATH = "/my-data";
+    public static String CONTENT_KEY = "myWeather";
 
     /*
      * The columns of data that we are interested in displaying within our MainActivity's list of
@@ -282,10 +284,19 @@ public class MainActivity extends AppCompatActivity implements
         data.moveToFirst();
         try {
 
-            obj.put(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,data.getInt(INDEX_WEATHER_MAX_TEMP));
-            obj.put(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,data.getInt(INDEX_WEATHER_MIN_TEMP));
+            int lowInCelsius = data.getInt(MainActivity.INDEX_WEATHER_MIN_TEMP);
+            int highInCelsius = data.getInt(MainActivity.INDEX_WEATHER_MAX_TEMP);
+            int weatherId = data.getInt(MainActivity.INDEX_WEATHER_CONDITION_ID);
+
+            String highString = SunshineWeatherUtils.formatTemperature(getApplicationContext(), highInCelsius);
+            String lowString = SunshineWeatherUtils.formatTemperature(getApplicationContext(), lowInCelsius);
+
+
+            obj.put(WeatherContract.WeatherEntry.COLUMN_MAX_TEMP,highString);
+            obj.put(WeatherContract.WeatherEntry.COLUMN_MIN_TEMP,lowString);
 
             obj.put("eta",System.currentTimeMillis()); //JUST FOR DEBUGGING
+            obj.put(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID,weatherId);
 
         } catch (JSONException e) {
             Toast.makeText(getApplication(),e.getMessage(),Toast.LENGTH_LONG).show();

@@ -78,6 +78,20 @@
                 <action android:name="com.firebase.jobdispatcher.ACTION_EXECUTE" />
             </intent-filter>
         </service>
+
+        <!-- This is the Service declaration used to send data to wearable when it gets connected -->
+        <service
+            android:name=".sync.SunshineWearableService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/config/start" />
+            </intent-filter>
+        </service>
+
+
+
     </application>
 
 </manifest>

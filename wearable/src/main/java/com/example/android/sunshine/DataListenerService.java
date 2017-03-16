@@ -1,6 +1,7 @@
 package com.example.android.sunshine;
 
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -10,6 +11,7 @@ import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
+import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.WearableListenerService;
 
 public class DataListenerService extends WearableListenerService {
@@ -28,6 +30,20 @@ public class DataListenerService extends WearableListenerService {
         mHandler = new Handler();
         sendToast("DataListenerService.onCreate");
         Log.d(TAG, "DataListenerService.onCreate called");
+    }
+
+
+    @Override
+    public void onPeerConnected(Node node) {
+        super.onPeerConnected(node);
+        sendToast("DataListenerService.onPeerConnected" + node.getDisplayName());
+    }
+
+    @Override
+    public boolean bindService(Intent service, ServiceConnection conn, int flags) {
+
+        sendToast("DataListenerService.bindService");
+        return super.bindService(service, conn, flags);
     }
 
     @Override

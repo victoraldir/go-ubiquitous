@@ -55,6 +55,8 @@ public class WeatherContract {
      * "givemeroot". At least, let's hope not. Don't be that dev, reader. Don't be that dev.
      */
     public static final String PATH_WEATHER = "weather";
+    public static final String PATH_WEATHER_TODAY = "weather/today";
+
 
     /* Inner class that defines the table contents of the weather table */
     public static final class WeatherEntry implements BaseColumns {
@@ -62,6 +64,10 @@ public class WeatherContract {
         /* The base CONTENT_URI used to query the Weather table from the content provider */
         public static final Uri CONTENT_URI = BASE_CONTENT_URI.buildUpon()
                 .appendPath(PATH_WEATHER)
+                .build();
+
+        public static final Uri CONTENT_TODAY_URI = BASE_CONTENT_URI.buildUpon()
+                .appendPath(PATH_WEATHER_TODAY)
                 .build();
 
         /* Used internally as the name of our weather table. */

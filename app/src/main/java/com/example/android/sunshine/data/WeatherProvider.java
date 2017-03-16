@@ -45,6 +45,7 @@ public class WeatherProvider extends ContentProvider {
      */
     public static final int CODE_WEATHER = 100;
     public static final int CODE_WEATHER_WITH_DATE = 101;
+    public static final int TODAY_WEATHER = 102;
 
     /*
      * The URI Matcher used by this content provider. The leading "s" in this variable name
@@ -95,6 +96,8 @@ public class WeatherProvider extends ContentProvider {
          * that it should return the CODE_WEATHER_WITH_DATE code
          */
         matcher.addURI(authority, WeatherContract.PATH_WEATHER + "/#", CODE_WEATHER_WITH_DATE);
+
+        matcher.addURI(authority, WeatherContract.PATH_WEATHER_TODAY, TODAY_WEATHER);
 
         return matcher;
     }
@@ -281,6 +284,19 @@ public class WeatherProvider extends ContentProvider {
                         null,
                         null,
                         sortOrder);
+
+                break;
+            }
+
+            case TODAY_WEATHER: {
+                cursor = mOpenHelper.getReadableDatabase().query(
+                        WeatherContract.WeatherEntry.TABLE_NAME,
+                        projection,
+                        null,
+                        null,
+                        null,
+                        "date DESC",
+                        "1");
 
                 break;
             }
