@@ -93,7 +93,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService implements  Goo
 
     @Override
     public boolean onUnbind(Intent intent) {
-        sendToast("MainWatchFaceService.onUnbind");
+        //sendToast("MainWatchFaceService.onUnbind");
         return super.onUnbind(intent);
     }
 
@@ -101,7 +101,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService implements  Goo
     public void onCreate() {
         super.onCreate();
         mHandler = new Handler();
-        sendToast("MainWatchFaceService.onCreate");
+        //sendToast("MainWatchFaceService.onCreate");
         mGoogleApiClient = new GoogleApiClient.Builder(getApplicationContext())
                 .addApi(Wearable.API)
                 .addConnectionCallbacks(this)
@@ -109,42 +109,42 @@ public class MainWatchFaceService extends CanvasWatchFaceService implements  Goo
                 .build();
     }
 
-    public void sendToast(final String content){
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(),"onDataChanged " + content,Toast.LENGTH_LONG).show();
-            }
-        });
-    }
+//    public void sendToast(final String content){
+//        mHandler.post(new Runnable() {
+//            @Override
+//            public void run() {
+//                Toast.makeText(getApplicationContext(),"onDataChanged " + content,Toast.LENGTH_LONG).show();
+//            }
+//        });
+//    }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        sendToast("MainWatchFaceService.onDestroy");
+        //sendToast("MainWatchFaceService.onDestroy");
         mGoogleApiClient.disconnect();
     }
 
     @Override
     public Engine onCreateEngine() {
-        sendToast("MainWatchFaceService.onCreateEngine");
+        //sendToast("MainWatchFaceService.onCreateEngine");
         return new Engine();
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        sendToast(MainWatchFaceService.class.getSimpleName() + "onConnected");
+        //sendToast(MainWatchFaceService.class.getSimpleName() + "onConnected");
         new RequestDataAsyncTask(getApplicationContext()).execute(mGoogleApiClient);
     }
 
     @Override
     public void onConnectionSuspended(int i) {
-        sendToast(MainWatchFaceService.class.getSimpleName() + "onConnectionSuspended");
+       // sendToast(MainWatchFaceService.class.getSimpleName() + "onConnectionSuspended");
     }
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        sendToast(MainWatchFaceService.class.getSimpleName() + "onConnectionFailed");
+       // sendToast(MainWatchFaceService.class.getSimpleName() + "onConnectionFailed");
     }
 
     private static class EngineHandler extends Handler {
@@ -224,7 +224,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService implements  Goo
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-            sendToast("Engine.onCreate fired");
+            //sendToast("Engine.onCreate fired");
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MainWatchFaceService.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_VARIABLE)
@@ -286,7 +286,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService implements  Goo
 
             mDataReceiver = new DataReceiver();
 
-            sendToast("MainWatchFaceService.onCreate fired");
+            //sendToast("MainWatchFaceService.onCreate fired");
 
             IntentFilter filter = new IntentFilter();
             filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -310,7 +310,7 @@ public class MainWatchFaceService extends CanvasWatchFaceService implements  Goo
 
                 if (content != null) {
 
-                    sendToast(content);
+                    //sendToast(content);
 
                     try {
 

@@ -39,11 +39,11 @@ public class RequestDataAsyncTask extends AsyncTask<GoogleApiClient,Void,Void> {
                     googleApiClient, node.getId(), CONFIG_START, "".getBytes()).await();
             if (result.getStatus().isSuccess()) {
 
-                sendToast("run: message successfully sent to");
+                //sendToast("run: message successfully sent to");
                 Log.d(TAG, "run: message successfully sent to " + node.getDisplayName());
 
             } else {
-                sendToast("run: error sending message to node");
+                //sendToast("run: error sending message to node");
                 Log.e(TAG, "run: error sending message to node " + node.getDisplayName());
             }
         }
@@ -51,12 +51,12 @@ public class RequestDataAsyncTask extends AsyncTask<GoogleApiClient,Void,Void> {
         return null;
     }
 
-    public void sendToast(final String content){
-        new Handler().post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(mContext,"RequestDataAsyncTask running " + content,Toast.LENGTH_LONG).show();
-            }
-        });
-    }
+//    public void sendToast(final String content){
+//        new Handler().post(new Runnable() {
+//            @Override
+//            public void run() {
+//                Toast.makeText(mContext,"RequestDataAsyncTask running " + content,Toast.LENGTH_LONG).show();
+//            }
+//        });
+//    }
 }

@@ -28,7 +28,7 @@ public class DataListenerService extends WearableListenerService {
     public void onCreate() {
         super.onCreate();
         mHandler = new Handler();
-        sendToast("DataListenerService.onCreate");
+        //sendToast("DataListenerService.onCreate");
         Log.d(TAG, "DataListenerService.onCreate called");
     }
 
@@ -36,27 +36,27 @@ public class DataListenerService extends WearableListenerService {
     @Override
     public void onPeerConnected(Node node) {
         super.onPeerConnected(node);
-        sendToast("DataListenerService.onPeerConnected" + node.getDisplayName());
+        //sendToast("DataListenerService.onPeerConnected" + node.getDisplayName());
     }
 
     @Override
     public boolean bindService(Intent service, ServiceConnection conn, int flags) {
 
-        sendToast("DataListenerService.bindService");
+        //sendToast("DataListenerService.bindService");
         return super.bindService(service, conn, flags);
     }
 
     @Override
     public void onDataChanged(DataEventBuffer dataEventBuffer) {
 
-        Toast.makeText(getApplicationContext(),"DataListenerService.onDataChanged",Toast.LENGTH_LONG).show();
+        //Toast.makeText(getApplicationContext(),"DataListenerService.onDataChanged",Toast.LENGTH_LONG).show();
         for (final DataEvent event : dataEventBuffer) {
             if (event.getType() == DataEvent.TYPE_CHANGED) {
 
                 DataMap dataMap = DataMapItem.fromDataItem(event.getDataItem()).getDataMap();
                 final String content = dataMap.getString(CONTENT_KEY);
 
-                sendToast("content: " + content);
+                //sendToast("content: " + content);
 
                 Intent localIntent = new Intent(ACTION_NEW_DATA);
                 localIntent.putExtra(EXTRA_RESULT, content);
@@ -69,13 +69,13 @@ public class DataListenerService extends WearableListenerService {
 
     }
 
-    private void sendToast(final String msg){
-        mHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();
-            }
-        });
-    }
+//    private void sendToast(final String msg){
+//        mHandler.post(new Runnable() {
+//            @Override
+//            public void run() {
+//                Toast.makeText(getApplicationContext(),msg,Toast.LENGTH_LONG).show();
+//            }
+//        });
+//    }
 
 }
